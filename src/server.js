@@ -59,6 +59,7 @@ app.get('/github/*', async (req, res) => {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'User-Agent': 'GitExplorer-App',
+        'Accept-Encoding': 'identity',
         ...(GITHUB_TOKEN ? { Authorization: `Bearer ${GITHUB_TOKEN}` } : {}),
         // Some GitHub endpoints (README raw content, star timestamps) need
         // a specific Accept header the client sends through as a custom
