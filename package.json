@@ -1,0 +1,16 @@
+{
+  "name": "gitexplorer-backend",
+  "version": "1.0.0",
+  "description": "Real proxy server for GitExplorer app - holds GitHub PAT and Groq API key server-side so the mobile app never embeds secrets.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.7.0",
+    "express-rate-limit": "^7.4.0",
+    "dotenv": "^16.4.5"
+  }
+}
