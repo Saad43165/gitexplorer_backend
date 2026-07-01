@@ -39,3 +39,4 @@ The server limits each caller to 60 requests/minute (see `express-rate-limit` in
 ## Important: this replaces per-user Settings API keys
 
 Once this is deployed and wired into the app, remove (or keep as an optional "advanced/self-hosted" override) the GitHub PAT / Groq key fields in the app's Settings screen — regular users won't need them anymore.
+# gitexplorer_backend
