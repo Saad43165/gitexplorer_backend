@@ -128,6 +128,7 @@ Keep the whole response under 150 words. No markdown headers, just plain short p
       headers: {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
         'Content-Type': 'application/json',
+        'Connection': 'close',
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
