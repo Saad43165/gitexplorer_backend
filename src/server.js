@@ -152,6 +152,58 @@ Keep the whole response under 150 words. No markdown headers, just plain short p
   }
 });
 
+app.post('/ai/analyze-user', async (req, res) => {
+  if (!GROQ_API_KEY) {
+    return res.status(503).json({ message: 'AI summaries are not configured on this server yet.' });
+  }
+
+  const { username, bio, repos } = req.body;
+  const repoDetails = (repos || []).slice(0, 8).map(r => `- ${r.name} (${r.language || 'Mixed'}): ${r.description || 'No description'}`).join('\n');
+
+  const prompt = `You are an expert technical recruiter analyzing a GitHub developer's profile.
+Analyze this developer based on their bio and top repositories.
+
+Username: ${username}
+Bio: ${bio || 'None provided'}
+Top Repositories:
+${repoDetails || 'No public repositories'}
+
+Respond with:
+1. A 2-sentence summary of their "Developer Vibe" (e.g., "Open-source contributor specializing in mobile apps. Strong focus on UI/UX.").
+2. Their top 2-3 inferred technical skills based on the repo languages and descriptions.
+
+Keep the entire response under 100 words. No markdown headers, just plain short text.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Connection': 'close',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.4,
+        max_tokens: 300,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ message: data.error?.message || 'Groq request failed' });
+    }
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      return res.status(502).json({ message: 'Empty response from Groq' });
+    }
+    res.json({ analysis: content.trim() });
+  } catch (err) {
+    res.status(502).json({ message: 'Upstream Groq request failed', error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`GitExplorer backend proxy listening on port ${PORT}`);
 });
