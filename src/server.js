@@ -204,6 +204,60 @@ Keep the entire response under 100 words. No markdown headers, just plain short 
   }
 });
 
+app.post('/ai/explain-code', async (req, res) => {
+  if (!GROQ_API_KEY) {
+    return res.status(503).json({ message: 'AI summaries are not configured on this server yet.' });
+  }
+
+  const { filename, code } = req.body;
+  if (!code || !filename) {
+    return res.status(400).json({ message: 'Filename and code are required.' });
+  }
+
+  // Truncate code if it's too long for the AI token limits (max ~8k tokens for llama-3.1-8b)
+  const safeCode = code.length > 15000 ? code.substring(0, 15000) + '\n...[TRUNCATED]' : code;
+
+  const prompt = `You are a senior software engineer mentoring a junior developer.
+Please explain the purpose and functionality of the following file: \`${filename}\`.
+
+CODE:
+\`\`\`
+${safeCode}
+\`\`\`
+
+Explain exactly what this file does, how it works, and highlight any interesting patterns or important functions. 
+Keep it concise, clear, and easy to read. Use markdown for code snippets. Limit response to 250 words max.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Connection': 'close',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 500,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      return res.status(response.status).json({ message: data.error?.message || 'Groq request failed' });
+    }
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      return res.status(502).json({ message: 'Empty response from Groq' });
+    }
+    res.json({ explanation: content.trim() });
+  } catch (err) {
+    res.status(502).json({ message: 'Upstream Groq request failed', error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`GitExplorer backend proxy listening on port ${PORT}`);
 });
